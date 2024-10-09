@@ -15,16 +15,22 @@ const Index = () => {
   };
 
   const handleSubmit = async (values: SignIn) => { 
-    console.log(values, 'values')
+    console.log(values, 'values');
     try {
       const resp = await auth.sign_in(values);
-      const access_token = resp?.data?.data?.tokens.access_token;
-      localStorage.setItem("access_token", access_token);
-      navigate("./admin-layout");
+      const access_token:string = resp?.data?.tokens?.access_token;
+      if (access_token) {
+        localStorage.setItem("access_token", access_token);
+        navigate("./admin-layout");
+      } else {
+        console.error("Access token not found");
+      }
     } catch (error) {
       console.error("error:", error);
     }
   };
+  
+
 
   return (
     <>

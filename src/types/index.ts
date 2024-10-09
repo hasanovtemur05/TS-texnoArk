@@ -1,16 +1,17 @@
 import { SignIn } from '@pages';
 
 
+
 export interface ParamsType {
-    limit: Number;
+    limit: number;
     search: string;
-    page: Number
+    page: number
 }
 
 export interface ModalProps {
     open: boolean;
     handleClose: ()=> void
-    updare: any
+    updare: unknown
 } 
 
 export interface SignIn {
@@ -30,8 +31,14 @@ export interface AccessToken {
 }
 
 export interface AuthRequest {
-    sign_in: (data:SignIn)=> Promise<any>,
-    sign_up: (data:SignUp)=> Promise<any> 
+    sign_in: (data:SignIn)=> Promise<unknown>,
+    sign_up: (data:SignUp)=> Promise<unknown> 
+}
+
+export interface Admin {
+    content: string
+    path: string
+    icon: JSX.Element
 }
 
 
