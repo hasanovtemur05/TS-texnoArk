@@ -1,12 +1,15 @@
-import { Form, Input, Button } from "antd";
+
+import { Form, Input, Button, notification } from "antd";
 import { useNavigate } from "react-router-dom";
-import { auth } from "@service";
-import { ToastContainer } from "react-toastify";
-import { SignIn } from "@types";
-import erp from "../../assets/images/erp.jpg"
+import { auth } from "@service"; 
+import { SignIn } from "@types"; 
+import erp from "../../assets/images/erp.jpg";
+import { useState } from "react";
+
 
 const Index = () => {
-  const [form] = Form.useForm<SignIn>(); 
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const initialValues: SignIn = {
@@ -14,23 +17,28 @@ const Index = () => {
     password: ''
   };
 
-  const handleSubmit = async (values: SignIn) => { 
-    console.log(values, 'values');
+  const handleSubmit = async (values:SignIn) => {
+    console.log(values);
+    
+    setLoading(true);
     try {
-      const resp = await auth.sign_in(values);
-      const access_token:string = resp?.data?.tokens?.access_token;
+     
+      const res:any = await auth.sign_in(values);
+      const access_token:string = res.data?.data?.tokens?.access_token; 
+
       if (access_token) {
         localStorage.setItem("access_token", access_token);
         navigate("./admin-layout");
       } else {
-        console.error("Access token not found");
+        notification.error({ message: "Authentication failed", description: "Access token not found" });
       }
     } catch (error) {
+      notification.error({ message: "Error", description: "Failed to sign in. Please check your credentials." });
       console.error("error:", error);
+    } finally {
+      setLoading(false);
     }
   };
-  
-
 
   return (
     <>
@@ -40,7 +48,6 @@ const Index = () => {
         </div>
         <div className="w-[70%] flex flex-col justify-center items-center md:w-[50%]">
           <div className="w-full md:w-[60%]">
-            <ToastContainer />
             <h1 style={{ textAlign: "center", fontSize: "30px", fontWeight: "bold", padding: "10px 10px" }}>Sign-In</h1>
             <Form
               form={form}
@@ -65,8 +72,14 @@ const Index = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button style={{ backgroundColor: "#ffa107", fontSize: "16px", padding: "25px" }} type="primary" htmlType="submit" block>
-                  Save
+                <Button
+                  style={{ backgroundColor: "#ffa107", fontSize: "16px", padding: "25px" }}
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={loading}
+                >
+                  Sign In
                 </Button>
               </Form.Item>
             </Form>

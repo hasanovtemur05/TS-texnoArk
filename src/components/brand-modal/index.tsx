@@ -1,32 +1,12 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from 'react';
 import { Button, Modal, Form, Input, Select, Upload, message } from 'antd';
-import { Formik, ErrorMessage } from 'formik';
+import { Formik, Field, ErrorMessage } from 'formik'; 
 import * as Yup from 'yup';
 import { brand } from '@service';
-import { UploadFile } from 'antd/es/upload/interface';
+import { BrandForm, BrandModalProps } from '../../types'; 
 
 const { Option } = Select;
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Brand {
-  id?: number;
-  name: string;
-  description: string;
-  category_id: number;
-  file?: File | null;
-}
-
-interface BrandModalProps {
-  open: boolean;
-  handleClose: () => void;
-  editingBrand: Brand | null;
-  categories: Category[];
-  getData: () => void;
-}
 
 const brandValidationSchema = Yup.object().shape({
   name: Yup.string().required("Brand Name is required"),
@@ -36,7 +16,7 @@ const brandValidationSchema = Yup.object().shape({
 });
 
 const BrandModal: React.FC<BrandModalProps> = ({ open, handleClose, editingBrand, categories, getData }) => {
-  const [initialValues, setInitialValues] = useState<Brand>({
+  const [initialValues, setInitialValues] = useState<BrandForm>({
     name: '',
     description: '',
     category_id: 0,
@@ -56,93 +36,97 @@ const BrandModal: React.FC<BrandModalProps> = ({ open, handleClose, editingBrand
     }
   }, [open, editingBrand]);
 
-  const onSubmit = async (values: Brand) => {
+  const onSubmit = async (values: BrandForm) => {
     console.log('Form values:', values);
     try {
       const formData = new FormData();
       formData.append('name', values.name);
       formData.append('description', values.description);
-      formData.append('category_id', String(values.category_id));
-      if (values.file) formData.append('file', values.file);
-
-      if (editingBrand) {
-        await brand.update(editingBrand.id!, formData);
-      } else {
-        await brand.create(formData);
+      formData.append('category_id', values.category_id.toString());
+      if (values.file) {
+        formData.append('file', values.file);
       }
-      getData();
+      if (editingBrand?.id) {
+        await brand.put(editingBrand.id, formData);
+      } else {
+        await brand.post(formData);
+      }
       handleClose();
+      getData();
       message.success('Brand saved successfully!');
     } catch (error) {
-      console.error('Error submitting brand:', error);
-      message.error('Error submitting brand');
+      console.error('Error saving brand:', error);
+      message.error('Error saving brand.');
     }
   };
 
   return (
     <Modal
-      title={editingBrand?.id ? 'Edit Brand' : 'Add Brand'}
+      title={editingBrand ? 'Edit Brand' : 'Create Brand'}
       visible={open}
       onCancel={handleClose}
       footer={null}
     >
       <Formik
-        enableReinitialize={true}
         initialValues={initialValues}
         validationSchema={brandValidationSchema}
         onSubmit={onSubmit}
       >
-        {({ values, isSubmitting, setFieldValue, handleChange, handleSubmit }) => (
-          <Form layout="vertical" onFinish={handleSubmit}>
-            <Form.Item label="Brand Name">
-              <Input name="name" value={values.name} onChange={handleChange} />
-              <ErrorMessage name="name" component="div" style={{ color: 'red' }} />
+        {({ setFieldValue }) => (
+          <Form>
+            <Form.Item label="Name" name="name">
+              <Field name="name">
+                {({ field }) => <Input {...field} />}
+              </Field>
+              <div style={{ color: 'red' }}>
+                <ErrorMessage name="name" component="span" />
+              </div>
             </Form.Item>
 
-            <Form.Item label="Description">
-              <Input.TextArea
-                name="description"
-                rows={2}
-                value={values.description}
-                onChange={handleChange}
-                style={{ resize: 'none' }}
-              />
-              <ErrorMessage name="description" component="div" style={{ color: 'red' }} />
+            <Form.Item label="Description" name="description">
+              <Field name="description">
+                {({ field }) => <Input.TextArea {...field} />}
+              </Field>
+              <div style={{ color: 'red' }}>
+                <ErrorMessage name="description" component="span" />
+              </div>
             </Form.Item>
 
             <Form.Item label="Category">
-              <Select
-                name="category_id"
-                value={values.category_id}
-                onChange={(value) => setFieldValue('category_id', value)}
-                placeholder="Select Category"
-              >
-                {categories.map((category) => (
-                  <Option key={category.id} value={category.id}>
-                    {category.name}
-                  </Option>
-                ))}
-              </Select>
-              <ErrorMessage name="category_id" component="div" style={{ color: 'red' }} />
+              <Field name="category_id">
+                {({ field }) => (
+                  <Select {...field}>
+                    {categories.map((category: { id: Key | null | undefined; name: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined; }) => (
+                      <Option key={category.id} value={category.id}>
+                        {category.name}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              <div style={{ color: 'red' }}>
+                <ErrorMessage name="category_id" component="span" />
+              </div>
             </Form.Item>
 
             <Form.Item label="Upload File">
               <Upload
-                beforeUpload={(file: UploadFile) => {
+                beforeUpload={(file) => {
                   setFieldValue('file', file);
-                  return false;
+                  return false; 
                 }}
                 showUploadList={false}
               >
                 <Button>Click to Upload</Button>
               </Upload>
-              {values.file && <span>{values.file.name}</span>}
-              <ErrorMessage name="file" component="div" style={{ color: 'red' }} />
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit" loading={isSubmitting}>
-                {editingBrand?.id ? 'Update' : 'Create'}
+              <Button type="primary" htmlType="submit">
+                {editingBrand ? 'Update' : 'Create'}
+              </Button>
+              <Button onClick={handleClose} style={{ marginLeft: 8 }}>
+                Cancel
               </Button>
             </Form.Item>
           </Form>

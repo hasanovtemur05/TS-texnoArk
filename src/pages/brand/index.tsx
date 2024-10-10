@@ -1,30 +1,19 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
-import { Button, Popconfirm, Space, Tooltip, Input, Form } from 'antd';
+import { Button, Popconfirm, Space, Tooltip, Input, TablePaginationConfig } from 'antd';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { brand, category } from '@service';
-import { BrandModal, GlobalTable } from '@components';
+import { BrandModal, GlobalTable } from '../../components';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Brand, Params, Category } from '../../types'; 
 
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Brand {
-  id: number;
-  name: string;
-  description: string;
-  category_id: number;
-  file?: string;
-}
-
-const Index: React.FC = () => {
+const Index = () => {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<Brand[]>([]);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState<number>(0);
-  const [params, setParams] = useState({
+  const [params, setParams] = useState<Params>({
     search: '',
     page: 1,
     limit: 3,
@@ -40,39 +29,60 @@ const Index: React.FC = () => {
 
   const getData = async () => {
     try {
-      const res = await brand.get(params);
-      setData(res?.data?.data?.brands);
-      setTotal(res?.data?.data?.count);
+        const paramsObj = {
+            params: {
+                search: params.search,
+                page: params.page,
+                limit: params.limit,
+            },
+        };
+        const res = await brand.get('', paramsObj); 
+        setData(res?.data?.data?.brands || []); 
+        setTotal(res?.data?.data?.count || 0); 
     } catch (error) {
-      console.error('Error fetching brands:', error);
+        console.log("Error fetching brands:", error);
     }
-  };
+};
 
-  const fetchCategories = async () => {
-    try {
-      const res = await category.get();
-      setCategories(res?.data?.data?.categories);
-    } catch (error) {
+  
+  
+  
+
+const fetchCategories = async () => {
+  try {
+      const paramsObj = {
+          params: {
+              search: '', 
+              page: 1,
+              limit: 10,
+          },
+      };
+      const res = await category.get('', paramsObj); 
+      setCategories(res?.data?.data?.categories || []); 
+  } catch (error) {
       console.error('Error fetching categories:', error);
-    }
-  };
+  }
+};
+
+
 
   useEffect(() => {
     getData();
     fetchCategories();
   }, [params]);
 
-  const handleTableChange = (pagination: number) => {
-    const { current, pageSize: } = pagination;
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    const { current = 1, pageSize = 3 } = pagination; 
     setParams((prev) => ({
       ...prev,
       page: current,
       limit: pageSize,
     }));
-    const currentParams = new URLSearchParams(search);
-    currentParams.set('page', `${current}`);
-    currentParams.set('limit', `${pageSize}`);
-    navigate(`?${currentParams}`);
+
+    const searchParams = new URLSearchParams(search);
+    searchParams.set('page', `${current}`);
+    searchParams.set('limit', `${pageSize}`);
+    navigate(`?${searchParams.toString()}`);
   };
 
   const handleCreate = () => {
@@ -85,16 +95,19 @@ const Index: React.FC = () => {
     setParams((prev) => ({
       ...prev,
       search: search_value,
+      page: 1,
     }));
+
     const searchParams = new URLSearchParams(search);
     searchParams.set('search', search_value);
-    navigate(`?${searchParams}`);
+    navigate(`?${searchParams.toString()}`);
+    getData(); 
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await brand.delete(id);
-      getData();
+      await brand.delete(id); 
+      getData(); 
     } catch (error) {
       console.error('Error deleting brand:', error);
     }
@@ -103,7 +116,7 @@ const Index: React.FC = () => {
   const columns = [
     {
       title: 'T/R',
-      render: (_: unknown, __: unknown, index: number) => (params.page - 1) * params.limit + index + 1,
+      render: (_: any, __: any, index: number) => (params.page - 1) * params.limit + index + 1,
     },
     {
       title: 'Name',
@@ -123,7 +136,7 @@ const Index: React.FC = () => {
     },
     {
       title: 'Action',
-      render: (_: unknown, record: Brand) => (
+      render: (_: any, record: Brand) => (
         <Space>
           <Tooltip title="Edit">
             <Button
@@ -138,7 +151,7 @@ const Index: React.FC = () => {
             title="Delete"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(record.id)} // handleDelete ni chaqirish
           >
             <Tooltip title="Delete">
               <Button icon={<DeleteOutlined />} />
@@ -155,8 +168,8 @@ const Index: React.FC = () => {
         open={open}
         handleClose={handleClose}
         getData={getData}
-        editingBrand={editingBrand}
-        categories={categories}
+        categories={categories} 
+        editingBrand={editingBrand} 
       />
       <div>
         <Input
@@ -170,7 +183,7 @@ const Index: React.FC = () => {
       </div>
       <GlobalTable
         columns={columns}
-        data={data}
+        data={data} 
         pagination={{
           current: params.page,
           pageSize: params.limit,
