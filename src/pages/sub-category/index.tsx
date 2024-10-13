@@ -9,14 +9,14 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const Index = () => {
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState([]); // Type data for subcategories
+  const [data, setData] = useState([]); 
   const [total, setTotal] = useState(0);
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { search } = useLocation();
-  const [editingCategory, setEditingCategory] = useState<null | { id: number; name: string }>(null); // Type for category being edited
+  const [editingCategory, setEditingCategory] = useState<null | { id: number; name: string }>(null); 
   const { id } = useParams<{ id: string }>();
-  const numericId = id ? Number(id) : null; // Safely convert to number or null
+  const numericId = id ? Number(id) : null; 
   const [params, setParams] = useState({
     search: "",
     page: 1,
